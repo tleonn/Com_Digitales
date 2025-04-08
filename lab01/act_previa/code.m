@@ -33,12 +33,17 @@ end
 
 pam_natural = m_t .* natural_samples; % Señal PAM natural
 
-% Muestreo instantáneo
+%% Muestreo instantáneo
 instant_pulses = zeros(size(t));
-for i = 1:length(t_pam)
-    idx = find(t >= t_pam(i), 1);
-    instant_pulses(idx) = m_pam(i);
+for n = 0:floor(max(t)/Ts)
+    % Calcular tiempo de muestra dentro de Ts
+    sample_time = n*Ts + d*Ts/2; % Muestra en el centro de la ventana d*Ts
+    [~, idx] = min(abs(t - sample_time));
+    if idx <= length(t)
+        instant_pulses(idx) = m_t(idx);
+    end
 end
+
 
 % Gráficos
 figure;
@@ -60,3 +65,14 @@ xlabel('Tiempo (s)'); ylabel('Amplitud');
 title('Muestreo Instantáneo');
 grid on;
 
+
+figure;
+hold on;
+plot(t, m_t, 'LineWidth', 1.5);
+plot(t, pam_natural, 'LineWidth', 1.2);
+stem(t, instant_pulses, 'b', 'Marker', 'none');
+legend('Original', 'PAM Natural', 'PAM Instantáneo');
+title('Comparación de Señales');
+xlabel('Tiempo (s)');
+ylabel('Amplitud');
+grid on;
