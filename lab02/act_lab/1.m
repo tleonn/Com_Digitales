@@ -1,6 +1,6 @@
 % Parámetros generales
 Nbits = 1e4;            % Número de bits
-sps = 16;                % Muestras por símbolo (frecuencia de muestreo alta) 
+sps = 8;                % Muestras por símbolo (frecuencia de muestreo alta) 
 t_bit = 1;              % Duración de cada bit (en segundos )
 Fs = sps / t_bit;       % Frecuencia de muestreo **
 
@@ -9,15 +9,15 @@ alphas = [0, 0.25, 0.75, 1]; % Valores de roll-off
 % Bits aleatorios
 bits = randi([0 1], 1, Nbits);
 
-% Codificación NRZ-L: 1 -> +1, 0 -> -1
+% Codificación NRZ-L: Señal con 1 y -1 que se crea mediante 1 -> +1, 0 -> -1
 nrz = 2*bits - 1;
 
 % Upsamplear (interpolar) la señal
-tx_signal = upsample(nrz, sps);  % Inserta ceros entre símbolos **
+tx_signal = upsample(nrz, sps);  % Inserta sps ceros entre símbolos **
 
 % Tiempo para el pulso coseno alzado
 span = 6;  % Span de símbolo del filtro (cuántos símbolos dura)
-t = linspace(-span/2, span/2, span*sps+1);  % Simétrico centrado en cero
+t = linspace(-span/2, span/2, span*Fs+1);  % Simétrico centrado en cero
 
 % Loop para cada valor de alpha
 for i = 1:length(alphas)
@@ -36,10 +36,22 @@ for i = 1:length(alphas)
     end
     
     % Normalizar energía del filtro
-    h = h / sum(h);
-
+    h = h / sqrt(sum(h.^2));
+    
     % Convolución para aplicar el shaping **
     tx_filtered = conv(tx_signal, h, 'same'); 
+    
+    figure;
+    subplot(1,1,1);
+    plot(tx_filtered); 
+    title(['Señal filtrada (\alpha = ', num2str(alpha), ')']);
+    xlabel('Muestras');
+    ylabel('Amplitud');
+    grid on;
+    
+
+    eyediagram(tx_filtered, 2*Fs); % 2 símbolos para ver el cruce
+    title(['Diagrama de ojo sin Ruido gaussiano para convolucion con (\alpha = ', num2str(alpha),')']);
 
     % Agregar ruido AWGN
     snr_dB = 20; % Relación señal a ruido 
@@ -47,5 +59,5 @@ for i = 1:length(alphas)
 
     % Diagrama de ojo
     eyediagram(rx_signal, 2*sps); % 2 símbolos para ver el cruce
-    title(['Diagrama de ojo (\alpha = ', num2str(alpha), ')']);
+    title(['Diagrama de ojo para convolucion con (\alpha = ', num2str(alpha),')']);
 end
